@@ -324,6 +324,7 @@ func cmdRemove(opts *Options, env CmdEnvironment) (*build.File, error) {
 		fixed := false
 		for _, key := range attrKeysForPattern(env.Rule, env.Args[0]) {
 			for _, val := range env.Args[1:] {
+				fmt.Fprintf(os.Stderr, "rule: *snip*, key: %s, val: %s, pkg: %s, args: %s\n", key, val, env.Pkg, env.Args)
 				ListAttributeDelete(env.Rule, key, val, env.Pkg)
 				fixed = true
 			}

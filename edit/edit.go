@@ -75,18 +75,39 @@ func ShortenLabel(label string, pkg string) string {
 	if !ShortenLabelsFlag {
 		return label
 	}
-	if !strings.HasPrefix(label, "//") {
+
+	// fmt.Fprintf(os.Stderr, "\n")
+
+	repo, labelPkg, rule := ParseLabel(label)
+	// fmt.Fprintf(os.Stderr, "label: %s, repo: %s, labelPkg: %s rule: %s\n", label, repo, labelPkg, rule)
+	if !strings.HasPrefix(label, "//") && repo == "" {
 		// It doesn't look like a long label, so we preserve it.
+		// fmt.Fprintf(os.Stderr, "not a long label: %s\n", label)
 		return label
 	}
-	repo, labelPkg, rule := ParseLabel(label)
-	if repo == "" && labelPkg == pkg { // local label
+	if repo == "" && labelPkg == pkg {
+		// local label
+		// fmt.Fprintf(os.Stderr, "short label path 1: %s\n", ":" + rule)
 		return ":" + rule
 	}
 	slash := strings.LastIndex(labelPkg, "/")
 	if (slash >= 0 && labelPkg[slash+1:] == rule) || labelPkg == rule {
-		return "//" + labelPkg
+		// //foo/bar:bar -> //foo/bar
+		// @qux//foo/bar:bar -> @qux//foo/bar
+		prefix := ""
+		if strings.HasPrefix(label, "@") {
+			prefix = "@" + repo
+		}
+		// fmt.Fprintf(os.Stderr, "short label path 2: %s\n", prefix + "//" + labelPkg)
+		return prefix + "//" + labelPkg
 	}
+	if strings.HasPrefix(label, "@") && repo == rule {
+		// @foo//:foo -> @foo
+		// TODO: I can't find doc on this anywhere, but it seems to work
+		// fmt.Fprintf(os.Stderr, "short label path 3: %s\n", "@" + repo)
+		return "@" + repo
+	}
+	fmt.Fprintf(os.Stderr, "short label path 4: %s\n", label)
 	return label
 }
 
